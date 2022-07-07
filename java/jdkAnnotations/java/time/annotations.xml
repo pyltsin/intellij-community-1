@@ -153,6 +153,21 @@
       <val name="to" val="999999999"/>
     </annotation>
   </item>
+  <item name='java.time.LocalDate boolean isAfter(java.time.chrono.ChronoLocalDate) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDate boolean isBefore(java.time.chrono.ChronoLocalDate) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDate boolean isEqual(java.time.chrono.ChronoLocalDate) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDate int get(java.time.temporal.TemporalField) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDate R query(java.time.temporal.TemporalQuery<R>) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
   <item name='java.time.LocalDateTime int getDayOfMonth()'>
     <annotation name='org.jetbrains.annotations.Range'>
       <val name="from" val="1"/>
@@ -500,6 +515,24 @@
   <item name='java.time.LocalDateTime java.time.LocalDateTime parse(java.lang.CharSequence, java.time.format.DateTimeFormatter)'>
     <annotation name='org.jetbrains.annotations.NotNull'/>
   </item>
+  <item name='java.time.LocalDateTime int get(java.time.temporal.TemporalField) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDateTime java.time.LocalDateTime truncatedTo(java.time.temporal.TemporalUnit) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDateTime boolean isAfter(java.time.chrono.ChronoLocalDateTime<?>) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDateTime boolean isBefore(java.time.chrono.ChronoLocalDateTime<?>) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDateTime boolean isEqual(java.time.chrono.ChronoLocalDateTime<?>) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalDateTime R query(java.time.temporal.TemporalQuery<R>) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
   <item name='java.time.LocalTime int getHour()'>
     <annotation name='org.jetbrains.annotations.Range'>
       <val name="from" val="0"/>
@@ -613,6 +646,24 @@
       <val name="from" val="0"/>
       <val name="to" val="999999999"/>
     </annotation>
+  </item>
+  <item name='java.time.LocalTime boolean isAfter(java.time.LocalTime) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalTime boolean isBefore(java.time.LocalTime) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalTime java.time.temporal.ValueRange range(java.time.temporal.TemporalField) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalTime int get(java.time.temporal.TemporalField) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalTime java.time.LocalTime truncatedTo(java.time.temporal.TemporalUnit) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.LocalTime R query(java.time.temporal.TemporalQuery<R>) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
   </item>
   <item name='java.time.Month int getValue()'>
     <annotation name='org.jetbrains.annotations.Range'>
@@ -1065,6 +1116,27 @@
       <val name="to" val="999999999"/>
     </annotation>
   </item>
+  <item name='java.time.OffsetDateTime int get(java.time.temporal.TemporalField) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetDateTime java.time.OffsetDateTime withOffsetSameLocal(java.time.ZoneOffset) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetDateTime java.time.OffsetDateTime truncatedTo(java.time.temporal.TemporalUnit) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetDateTime R query(java.time.temporal.TemporalQuery<R>) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetDateTime boolean isAfter(java.time.OffsetDateTime) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetDateTime boolean isBefore(java.time.OffsetDateTime) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetDateTime boolean isEqual(java.time.OffsetDateTime) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
   <item name='java.time.OffsetTime java.time.OffsetTime of(int, int, int, int, java.time.ZoneOffset) 0'>
     <annotation name='org.jetbrains.annotations.Range'>
       <val name="from" val="0"/>
@@ -1136,6 +1208,24 @@
       <val name="from" val="0"/>
       <val name="to" val="999999999"/>
     </annotation>
+  </item>
+  <item name='java.time.OffsetTime int get(java.time.temporal.TemporalField) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetTime java.time.OffsetTime truncatedTo(java.time.temporal.TemporalUnit) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetTime R query(java.time.temporal.TemporalQuery<R>) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetTime boolean isAfter(java.time.OffsetTime) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetTime boolean isBefore(java.time.OffsetTime) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
+  </item>
+  <item name='java.time.OffsetTime boolean isEqual(java.time.OffsetTime) 0'>
+    <annotation name='org.jetbrains.annotations.NotNull'/>
   </item>
   <item name='java.time.YearMonth java.time.YearMonth of(int, int) 0'>
     <annotation name='org.jetbrains.annotations.Range'>
