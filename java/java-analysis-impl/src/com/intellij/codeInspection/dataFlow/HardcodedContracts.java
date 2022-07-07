@@ -21,8 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 import static com.intellij.codeInspection.dataFlow.ContractReturnValue.*;
-import static com.intellij.codeInspection.dataFlow.MethodContract.singleConditionContract;
-import static com.intellij.codeInspection.dataFlow.MethodContract.trivialContract;
+import static com.intellij.codeInspection.dataFlow.MethodContract.*;
 import static com.intellij.codeInspection.dataFlow.StandardMethodContract.ValueConstraint.*;
 import static com.intellij.codeInspection.dataFlow.StandardMethodContract.createConstraintArray;
 import static com.intellij.psi.CommonClassNames.*;
@@ -43,7 +42,7 @@ public final class HardcodedContracts {
   private static final CallMatcher QUEUE_POLL = anyOf(
     instanceCall(JAVA_UTIL_QUEUE, "poll").parameterCount(0),
     instanceCall("java.util.Deque", "pollFirst", "pollLast").parameterCount(0)
-    );
+  );
   private static final Set<String> PURE_ARRAY_METHODS = Set.of("binarySearch", "spliterator", "stream", "equals", "deepEquals");
   private static final CallMatcher NO_PARAMETER_LEAK_METHODS =
     anyOf(
@@ -117,9 +116,9 @@ public final class HardcodedContracts {
     .register(instanceCall(JAVA_UTIL_LIST, "get", "remove").parameterTypes("int"),
               ContractProvider.of(specialFieldRangeContract(0, RelationType.LT, SpecialField.COLLECTION_SIZE)))
     .register(anyOf(
-      instanceCall(JAVA_UTIL_SORTED_SET, "first", "last").parameterCount(0),
-      instanceCall("java.util.Deque", "getFirst", "getLast").parameterCount(0),
-      instanceCall(JAVA_UTIL_QUEUE, "element").parameterCount(0)),
+                instanceCall(JAVA_UTIL_SORTED_SET, "first", "last").parameterCount(0),
+                instanceCall("java.util.Deque", "getFirst", "getLast").parameterCount(0),
+                instanceCall(JAVA_UTIL_QUEUE, "element").parameterCount(0)),
               ContractProvider.of(singleConditionContract(
                 ContractValue.qualifier().specialField(SpecialField.COLLECTION_SIZE), RelationType.EQ,
                 ContractValue.zero(), fail())))
@@ -130,11 +129,41 @@ public final class HardcodedContracts {
     .register(staticCall("org.mockito.ArgumentMatchers", "argThat").parameterCount(1),
               ContractProvider.of(StandardMethodContract.fromText("_->_")))
     .register(anyOf(
-      instanceCall(JAVA_UTIL_QUEUE, "peek", "poll").parameterCount(0),
-      instanceCall("java.util.Deque", "peekFirst", "peekLast", "pollFirst", "pollLast").parameterCount(0)),
+                instanceCall(JAVA_UTIL_QUEUE, "peek", "poll").parameterCount(0),
+                instanceCall("java.util.Deque", "peekFirst", "peekLast", "pollFirst", "pollLast").parameterCount(0)),
               (call, paramCount) -> Arrays.asList(singleConditionContract(
                 ContractValue.qualifier().specialField(SpecialField.COLLECTION_SIZE), RelationType.EQ,
                 ContractValue.zero(), returnNull()), trivialContract(returnAny())))
+    .register(instanceCall(JAVA_TIME_LOCAL_DATE, "isAfter"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.GT, SpecialField.LOCAL_DATE_EPOCH_DAYS)))
+    .register(instanceCall(JAVA_TIME_LOCAL_TIME, "isAfter"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.GT, SpecialField.LOCAL_TIME_DAY_NANOSECONDS)))
+    .register(instanceCall(JAVA_TIME_OFFSET_TIME, "isAfter"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.GT)))
+    .register(instanceCall(JAVA_TIME_OFFSET_DATE_TIME, "isAfter"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.GT)))
+    .register(instanceCall(JAVA_TIME_LOCAL_DATE_TIME, "isAfter"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.GT, SpecialField.LOCAL_DATE_TIME_COMPARE_VALUE)))
+    .register(instanceCall(JAVA_TIME_LOCAL_DATE, "isBefore"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.LT, SpecialField.LOCAL_DATE_EPOCH_DAYS)))
+    .register(instanceCall(JAVA_TIME_LOCAL_TIME, "isBefore"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.LT, SpecialField.LOCAL_TIME_DAY_NANOSECONDS)))
+    .register(instanceCall(JAVA_TIME_OFFSET_TIME, "isBefore"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.LT)))
+    .register(instanceCall(JAVA_TIME_OFFSET_DATE_TIME, "isBefore"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.LT)))
+    .register(instanceCall(JAVA_TIME_LOCAL_DATE_TIME, "isBefore"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.LT, SpecialField.LOCAL_DATE_TIME_COMPARE_VALUE)))
+    .register(instanceCall(JAVA_TIME_LOCAL_DATE, "isEqual", "equals"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.EQ, SpecialField.LOCAL_DATE_EPOCH_DAYS)))
+    .register(instanceCall(JAVA_TIME_LOCAL_TIME, "isEqual", "equals"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.EQ, SpecialField.LOCAL_TIME_DAY_NANOSECONDS)))
+    .register(instanceCall(JAVA_TIME_OFFSET_TIME, "isEqual", "equals"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.EQ)))
+    .register(instanceCall(JAVA_TIME_OFFSET_DATE_TIME, "isEqual", "equals"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.EQ)))
+    .register(instanceCall(JAVA_TIME_LOCAL_DATE_TIME, "isEqual", "equals"),
+              ((call, paramCount) -> javaTimeCompare(RelationType.EQ, SpecialField.LOCAL_DATE_TIME_COMPARE_VALUE)))
     .register(anyOf(staticCall(JAVA_LANG_MATH, "max").parameterTypes("int", "int"),
                     staticCall(JAVA_LANG_MATH, "max").parameterTypes("long", "long"),
                     staticCall(JAVA_LANG_INTEGER, "max").parameterTypes("int", "int"),
@@ -159,9 +188,9 @@ public final class HardcodedContracts {
     .register(instanceCall(JAVA_LANG_OBJECT, "equals").parameterTypes(JAVA_LANG_OBJECT),
               (call, paramCount) -> equalsContracts(call))
     .register(anyOf(
-      staticCall(JAVA_UTIL_OBJECTS, "equals").parameterCount(2),
-      staticCall(JAVA_UTIL_ARRAYS, "equals", "deepEquals").parameterCount(2),
-      staticCall("com.google.common.base.Objects", "equal").parameterCount(2)),
+                staticCall(JAVA_UTIL_OBJECTS, "equals").parameterCount(2),
+                staticCall(JAVA_UTIL_ARRAYS, "equals", "deepEquals").parameterCount(2),
+                staticCall("com.google.common.base.Objects", "equal").parameterCount(2)),
               ContractProvider.of(
                 singleConditionContract(ContractValue.argument(0), RelationType.EQ, ContractValue.argument(1),
                                         returnTrue()),
@@ -287,8 +316,45 @@ public final class HardcodedContracts {
 
   static List<MethodContract> mathMinMax(boolean isMax) {
     return Arrays.asList(singleConditionContract(
-      ContractValue.argument(0), isMax ? RelationType.GT : RelationType.LT, ContractValue.argument(1), returnParameter(0)),
+                           ContractValue.argument(0), isMax ? RelationType.GT : RelationType.LT, ContractValue.argument(1), returnParameter(0)),
                          trivialContract(returnParameter(1)));
+  }
+
+  private static List<MethodContract> javaTimeCompare(RelationType relationType) {
+    final ContractValue qualifier = ContractValue.qualifier();
+    final ContractValue argument = ContractValue.argument(0);
+
+    return Arrays.asList(
+      multipleConditionContract(
+        List.of(
+          ContractValue.condition(qualifier, relationType, argument),
+          ContractValue.condition(argument, RelationType.IS, qualifier)),
+        returnBoolean(true)),
+      multipleConditionContract(
+        List.of(
+          ContractValue.condition(qualifier, relationType.getNegated(), argument),
+          ContractValue.condition(argument, RelationType.IS, qualifier)),
+        returnBoolean(false)));
+  }
+
+  private static List<MethodContract> javaTimeCompare(RelationType relationType, SpecialField specialField) {
+    final ContractValue qualifier = ContractValue.qualifier();
+    final ContractValue qualifierField = qualifier.specialField(specialField);
+
+    final ContractValue argument = ContractValue.argument(0);
+    final ContractValue argumentField = argument.specialField(specialField);
+
+    return Arrays.asList(
+      multipleConditionContract(
+        List.of(
+          ContractValue.condition(qualifierField, relationType, argumentField),
+          ContractValue.condition(argument, RelationType.IS, qualifier)),
+        returnBoolean(true)),
+      multipleConditionContract(
+        List.of(
+          ContractValue.condition(qualifierField, relationType.getNegated(), argumentField),
+          ContractValue.condition(argument, RelationType.IS, qualifier)),
+        returnBoolean(false)));
   }
 
   private static List<MethodContract> equalsContracts(PsiMethodCallExpression call) {

@@ -1,0 +1,18 @@
+<html>
+<body>
+Reports comparisons in which the <code>compareTo</code> method can be replaced to <code>isAfter</code>, <code>isBefore</code> or <code>isEqual</code>
+of LocalTime, LocalDateTime, LocalDate, OffsetTime or OffsetDateTime.
+<p>Example:</p>
+<pre><code>
+  LocalDate date1 = LocalDate.now();
+  LocalDate date2 = LocalDate.now();
+  boolean t = date1.compareTo(date2) > 0;
+</code></pre>
+<p>After the quick-fix is applied:</p>
+<pre><code>
+  LocalDate date1 = LocalDate.now();
+  LocalDate date2 = LocalDate.now();
+  boolean t = date1.isAfter(date2);
+</code></pre>
+</body>
+</html>

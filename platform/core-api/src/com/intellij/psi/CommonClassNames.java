@@ -132,5 +132,10 @@ public interface CommonClassNames {
 
   String CLASS_FILE_EXTENSION = ".class";
 
+  String JAVA_TIME_LOCAL_DATE = "java.time.LocalDate";
+  String JAVA_TIME_LOCAL_DATE_TIME = "java.time.LocalDateTime";
+  String JAVA_TIME_LOCAL_TIME = "java.time.LocalTime";
+  String JAVA_TIME_OFFSET_DATE_TIME = "java.time.OffsetDateTime";
+  String JAVA_TIME_OFFSET_TIME = "java.time.OffsetTime";
   @NonNls String SERIAL_VERSION_UID_FIELD_NAME = "serialVersionUID";
 }
