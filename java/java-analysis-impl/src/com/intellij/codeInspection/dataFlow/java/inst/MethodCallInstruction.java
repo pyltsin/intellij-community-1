@@ -477,12 +477,9 @@ public class MethodCallInstruction extends ExpressionPushingInstruction {
         PsiElement anchor = getContext();
         if (anchor instanceof PsiMethodCallExpression) {
           anchor = ((PsiMethodCallExpression)anchor).getMethodExpression().getQualifierExpression();
-        }
-        else if (anchor instanceof PsiMethodReferenceExpression) {
-          anchor = ((PsiMethodReferenceExpression)anchor).getQualifierExpression();
-        }
-        if (anchor != null) {
-          interpreter.getListener().onCondition(new StreamConsumedProblem(anchor), value, ThreeState.YES, memState);
+          if (anchor != null) {
+            interpreter.getListener().onCondition(new StreamConsumedProblem(anchor), value, ThreeState.YES, memState);
+          }
         }
       }
     }

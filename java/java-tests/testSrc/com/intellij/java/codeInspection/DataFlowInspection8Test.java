@@ -373,5 +373,6 @@ public class DataFlowInspection8Test extends DataFlowInspectionTestCase {
   }
   public void testConstructorMethodReferenceNullability() { doTest(); }
   public void testConsumedStream() { doTest(); }
+  public void testConsumedStreamDifferentMethods() { doTest(); }
   public void testConsumedStreamWithoutInline()  { doTest(); }
 }

@@ -197,23 +197,7 @@ public final class CustomMethodHandlers {
     //for propagation CONSUMED_STREAM
     .register(ConsumedStreamUtils.getSkipMatchers(), (args, memState, factory, method) -> args.myQualifier)
     //many of them are not fully local objects, but they don't affect on CONSUMED_STREAM
-    .register(anyOf(
-      staticCall(JAVA_UTIL_STREAM_STREAM, "empty", "of", "ofNullable", "iterate", "generate", "concat"),
-      staticCall(JAVA_UTIL_STREAM_INT_STREAM, "empty", "of", "iterate", "generate", "range", "rangeClosed", "concat"),
-      staticCall(JAVA_UTIL_STREAM_LONG_STREAM, "empty", "of", "iterate", "generate", "range", "rangeClosed", "concat"),
-      staticCall(JAVA_UTIL_STREAM_DOUBLE_STREAM, "empty", "of", "iterate", "generate", "concat"),
-      staticCall("java.util.stream.StreamSupport", "stream", "intStream", "longStream", "doubleStream"),
-      instanceCall(JAVA_UTIL_COLLECTION, "stream", "parallelStream"),
-      instanceCall(JAVA_UTIL_ARRAYS, "stream"),
-      instanceCall(JAVA_UTIL_STREAM_STREAM, "filter", "map", "mapToInt", "mapToLong", "mapToDouble", "flatMap", "flatMapToInt",
-                   "flatMapToLong", "flatMapToDouble", "mapMulti", "mapMultiToInt", "mapMultiToLong", "mapMultiToDouble", "distinct", "sorted",
-                   "peek", "limit", "skip", "takeWhile", "dropWhile"),
-      instanceCall(JAVA_UTIL_STREAM_INT_STREAM, "filter", "map", "mapToObj", "mapToLong", "mapToDouble", "flatMap", "mapMulti",
-                   "distinct", "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile"),
-      instanceCall(JAVA_UTIL_STREAM_LONG_STREAM, "filter", "map", "mapToObj", "mapToInt", "mapToDouble", "flatMap", "mapMulti",
-                   "distinct", "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile"),
-      instanceCall(JAVA_UTIL_STREAM_DOUBLE_STREAM, "filter", "map", "mapToObj", "mapToInt", "mapToLong", "flatMap", "mapMulti",
-                   "distinct", "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile")),
+    .register(ConsumedStreamUtils.getStreamGenerators(),
               toValue((arguments, state, factory, method) -> CONSUMED_STREAM.asDfType(FALSE)
                 .meet(LOCAL_OBJECT)
                 .meet(NOT_NULL_OBJECT)));

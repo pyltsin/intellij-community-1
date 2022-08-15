@@ -1,3 +1,4 @@
+import java.util.Iterator;
 import java.util.Random;
 import java.util.stream.Stream;
 
@@ -66,6 +67,53 @@ public class ConsumedStream {
     if (x < 1) {
       <warning descr="Stream has already been linked or consumed">stream</warning>.forEach(System.out::println);
     }
+  }
+
+  public static void test2E() {
+    Stream<String> stream = Stream.of("x");
+    Stream<String> stream2 = stream.filter(String::isEmpty);
+    double random = Math.random();
+    Stream<String> stream3 = <warning descr="Stream has already been linked or consumed">stream</warning>.filter(x -> !x.isEmpty());
+  }
+
+  public static void test3E() {
+    Stream<String> stream = Stream.of("x");
+    double random = Math.random();
+
+    if (random > 0.5) {
+      stream.forEach(System.out::println);
+    }
+
+    if (random > 0.9) {
+      <warning descr="Stream has already been linked or consumed">stream</warning>.forEach(System.out::println);
+    }
+  }
+
+  public static void test6E() {
+    Stream<String> stream = Stream.of("x");
+    double random2 = Math.random();
+    Stream<String> stringStream = stream.filter(t -> true);
+    boolean parallel = stream.isParallel();
+    double random3 = Math.random();
+    method(stream);
+    <warning descr="Stream has already been linked or consumed">stream</warning>.filter(t -> true);
+  }
+
+  public static void test7E() {
+    Stream<String> stream = Stream.of("x");
+    Stream<String> parallel = stream.parallel().filter(t->true);
+    <warning descr="Stream has already been linked or consumed">stream</warning>.forEach(System.out::println);
+  }
+
+  public static void test8E() {
+    Stream<String> stream = Stream.of("x");
+    stream.forEach(System.out::println);
+    Stream<String> parallel = stream.parallel();
+    <warning descr="Stream has already been linked or consumed">parallel</warning>.forEach(System.out::println);
+  }
+
+  private static void method(Stream<String> stream) {
+    Iterator<String> iterator = stream.iterator();
   }
 
   public static void test1N() {
