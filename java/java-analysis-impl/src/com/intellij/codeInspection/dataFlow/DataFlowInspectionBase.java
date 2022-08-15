@@ -303,6 +303,7 @@ public abstract class DataFlowInspectionBase extends AbstractBaseJavaLocalInspec
 
     reportDuplicateAssignments(reporter, visitor);
     reportPointlessSameArguments(reporter, visitor);
+    reportStreamConsumed(holder, visitor);
   }
 
   private static void reportRedundantInstanceOf(DataFlowInstructionVisitor visitor, ProblemReporter reporter) {
@@ -733,6 +734,12 @@ public abstract class DataFlowInspectionBase extends AbstractBaseJavaLocalInspec
     });
     visitor.negativeArraySizes().forEach(dimExpression -> {
       holder.registerProblem(dimExpression, JavaAnalysisBundle.message("dataflow.message.negative.array.size"));
+    });
+  }
+
+  private static void reportStreamConsumed(ProblemsHolder holder, DataFlowInstructionVisitor visitor) {
+    visitor.streamConsumed().forEach(psiElement -> {
+      holder.registerProblem(psiElement, JavaAnalysisBundle.message("dataflow.message.stream.consumed"));
     });
   }
 

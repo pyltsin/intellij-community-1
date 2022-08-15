@@ -57,6 +57,7 @@ final class DataFlowInstructionVisitor implements JavaDfaListener {
   private final Map<PsiAssignmentExpression, Pair<PsiType, PsiType>> myArrayStoreProblems = new HashMap<>();
   private final Map<PsiArrayAccessExpression, ThreeState> myOutOfBoundsArrayAccesses = new HashMap<>();
   private final Map<PsiExpression, ThreeState> myNegativeArraySizes = new HashMap<>();
+  private final Set<PsiElement> myStreamConsumed = new HashSet<>();
   private final Set<PsiElement> myReceiverMutabilityViolation = new HashSet<>();
   private final Set<PsiElement> myArgumentMutabilityViolation = new HashSet<>();
   private final Map<PsiExpression, Boolean> mySameValueAssigned = new HashMap<>();
@@ -206,6 +207,10 @@ final class DataFlowInstructionVisitor implements JavaDfaListener {
 
   Stream<PsiExpression> negativeArraySizes() {
     return StreamEx.ofKeys(myNegativeArraySizes, ThreeState.YES::equals);
+  }
+
+  Stream<PsiElement> streamConsumed() {
+    return myStreamConsumed.stream();
   }
 
   StreamEx<PsiCallExpression> alwaysFailingCalls() {
@@ -375,6 +380,9 @@ final class DataFlowInstructionVisitor implements JavaDfaListener {
       ThreeState ok = notNullable ? unknown ? ThreeState.UNSURE : ThreeState.YES : ThreeState.NO;
       StateInfo info = myStateInfos.computeIfAbsent((NullabilityProblemKind.NullabilityProblem<?>)problem, k -> new StateInfo());
       info.update(state, ok);
+    }
+    else if (problem instanceof StreamConsumedProblem && failed == ThreeState.YES) {
+        myStreamConsumed.add(((StreamConsumedProblem)problem).getAnchor());
     }
   }
 

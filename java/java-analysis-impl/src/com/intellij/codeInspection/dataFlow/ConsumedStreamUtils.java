@@ -1,0 +1,59 @@
+// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+package com.intellij.codeInspection.dataFlow;
+
+import com.intellij.psi.PsiMethod;
+import com.siyeh.ig.callMatcher.CallMapper;
+import com.siyeh.ig.callMatcher.CallMatcher;
+import org.jetbrains.annotations.Nullable;
+
+import static com.intellij.psi.CommonClassNames.*;
+import static com.siyeh.ig.callMatcher.CallMatcher.instanceCall;
+
+public final class ConsumedStreamUtils {
+
+  private static final CallMatcher ADDITIONAL_CHECKED_STREAM_MATCHERS = instanceCall(JAVA_UTIL_STREAM_BASE_STREAM, "onClose");
+
+  private static final CallMatcher ADDITIONAL_MARK_STREAM_MATCHERS = instanceCall(JAVA_UTIL_STREAM_BASE_STREAM, "close");
+
+  private static final CallMatcher SKIP_STREAM_MATCHERS = instanceCall(JAVA_UTIL_STREAM_BASE_STREAM, "unordered", "parallel", "sequential");
+  private static final CallMatcher MARK_AND_CONSUMED_STREAM_MATCHERS = CallMatcher.anyOf(
+    instanceCall(JAVA_UTIL_STREAM_BASE_STREAM,  "iterator", "spliterator"),
+    instanceCall(JAVA_UTIL_STREAM_STREAM, "filter", "map", "mapToInt", "mapToLong", "mapToDouble", "flatMap",
+                 "flatMapToInt", "flatMapToLong", "flatMapToDouble", "distinct", "sorted", "peek", "limit", "skip", "takeWhile",
+                 "dropWhile", "forEach", "forEachOrdered", "toArray", "reduce", "collect", "min", "max", "count", "anyMatch",
+                 "allMatch", "nonMatch", "findFirst", "findAny", "mapMulti", "mapMultiToInt", "mapMultiToLong",
+                 "mapMultiToDouble", "toList"),
+    instanceCall(JAVA_UTIL_STREAM_INT_STREAM, "filter", "map", "mapToObj", "mapToLong", "mapToDouble", "flatMap", "distinct",
+                 "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile", "forEach", "forEachOrdered", "toArray", "reduce", "collect",
+                 "sum", "min", "max", "count", "average", "summaryStatistics", "anyMatch", "allMatch", "noneMatch", "findFirst", "findAny",
+                 "asLongStream", "asDoubleStream", "boxed", "mapMulti"),
+    instanceCall(JAVA_UTIL_STREAM_LONG_STREAM, "filter", "map", "mapToObj", "mapToInt", "mapToDouble", "flatMap", "distinct",
+                 "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile", "forEach", "forEachOrdered", "toArray", "reduce", "collect",
+                 "sum", "min", "max", "count", "average", "summaryStatistics", "anyMatch", "allMatch", "noneMatch", "findFirst", "findAny",
+                 "asDoubleStream", "boxed", "mapMulti"),
+    instanceCall(JAVA_UTIL_STREAM_DOUBLE_STREAM, "filter", "map", "mapToObj", "mapToInt", "mapToLong", "flatMap", "distinct",
+                 "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile", "forEach", "forEachOrdered", "toArray", "reduce", "collect",
+                 "sum", "min", "max", "count", "average", "summaryStatistics", "anyMatch", "allMatch", "noneMatch", "findFirst", "findAny",
+                 "boxed", "mapMulti")
+  );
+
+  private static final CallMapper<Boolean> CHECKED_CALL_MATCHERS = new CallMapper<Boolean>()
+    .register(MARK_AND_CONSUMED_STREAM_MATCHERS, Boolean.TRUE)
+    .register(ADDITIONAL_CHECKED_STREAM_MATCHERS, Boolean.TRUE);
+
+  public static boolean isCheckedCallForConsumedStream(PsiMethod method) {
+    return CHECKED_CALL_MATCHERS.mapFirst(method) == Boolean.TRUE;
+  }
+
+  public static CallMatcher getSkipMatchers() {
+    return SKIP_STREAM_MATCHERS;
+  }
+
+  public static CallMatcher getCallMatchersForMarkConsumed() {
+    return CallMatcher.anyOf(MARK_AND_CONSUMED_STREAM_MATCHERS, ADDITIONAL_MARK_STREAM_MATCHERS);
+  }
+
+  public static CallMatcher getAllNonLeakStreamMatchers() {
+    return CallMatcher.anyOf(MARK_AND_CONSUMED_STREAM_MATCHERS, ADDITIONAL_MARK_STREAM_MATCHERS, ADDITIONAL_CHECKED_STREAM_MATCHERS);
+  }
+}

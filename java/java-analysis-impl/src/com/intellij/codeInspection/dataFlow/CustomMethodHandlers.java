@@ -151,10 +151,10 @@ public final class CustomMethodHandlers {
       staticCall(JAVA_UTIL_MAP, "of", "ofEntries"),
       staticCall(JAVA_UTIL_ARRAYS, "asList")), CustomMethodHandlers::collectionFactory)
     .register(anyOf(
-      staticCall(JAVA_LANG_INTEGER, "compare").parameterTypes("int", "int"),
-      staticCall(JAVA_LANG_LONG, "compare").parameterTypes("long", "long"),
-      staticCall(JAVA_LANG_BYTE, "compare").parameterTypes("byte", "byte"),
-      staticCall(JAVA_LANG_SHORT, "compare").parameterTypes("short", "short")),
+                staticCall(JAVA_LANG_INTEGER, "compare").parameterTypes("int", "int"),
+                staticCall(JAVA_LANG_LONG, "compare").parameterTypes("long", "long"),
+                staticCall(JAVA_LANG_BYTE, "compare").parameterTypes("byte", "byte"),
+                staticCall(JAVA_LANG_SHORT, "compare").parameterTypes("short", "short")),
               toValue((args, state, factory, method) -> compareInteger(args, state)))
     .register(anyOf(
       instanceCall("java.util.Random", "nextInt").parameterTypes("int"),
@@ -179,9 +179,9 @@ public final class CustomMethodHandlers {
     .register(exactInstanceCall(JAVA_LANG_OBJECT, "getClass").parameterCount(0), toValue(CustomMethodHandlers::objectGetClass))
     .register(anyOf(staticCall(JAVA_LANG_MATH, "random").parameterCount(0),
                     instanceCall("java.util.Random", "nextDouble").parameterCount(0),
-                    instanceCall("java.util.SplittableRandom", "nextDouble").parameterCount(0)), 
+                    instanceCall("java.util.SplittableRandom", "nextDouble").parameterCount(0)),
               toValue((arguments, state, factory, method) -> doubleRange(0.0, Math.nextDown(1.0))))
-    .register(instanceCall("java.util.Random", "nextFloat").parameterCount(0), 
+    .register(instanceCall("java.util.Random", "nextFloat").parameterCount(0),
               toValue((arguments, state, factory, method) -> floatRange(0.0f, Math.nextDown(1.0f))))
     .register(staticCall(JAVA_LANG_DOUBLE, "isNaN").parameterTypes("double"),
               toValue((arguments, state, factory, method) -> isNaN(arguments, state, DOUBLE_NAN)))
@@ -193,7 +193,30 @@ public final class CustomMethodHandlers {
                            "newCopyOnWriteArraySet", "newConcurrentHashSet", "newTreeSet").parameterCount(0),
                 staticCall("com.google.common.collect.Maps", "newHashMap", "newLinkedHashMap", "newIdentityHashMap",
                            "newConcurrentHashMap", "newTreeMap").parameterCount(0)),
-              toValue((arguments, state, factory, method) -> COLLECTION_SIZE.asDfType(intValue(0)).meet(LOCAL_OBJECT)));
+              toValue((arguments, state, factory, method) -> COLLECTION_SIZE.asDfType(intValue(0)).meet(LOCAL_OBJECT)))
+    //for propagation CONSUMED_STREAM
+    .register(ConsumedStreamUtils.getSkipMatchers(), (args, memState, factory, method) -> args.myQualifier)
+    //many of them are not fully local objects, but they don't affect on CONSUMED_STREAM
+    .register(anyOf(
+      staticCall(JAVA_UTIL_STREAM_STREAM, "empty", "of", "ofNullable", "iterate", "generate", "concat"),
+      staticCall(JAVA_UTIL_STREAM_INT_STREAM, "empty", "of", "iterate", "generate", "range", "rangeClosed", "concat"),
+      staticCall(JAVA_UTIL_STREAM_LONG_STREAM, "empty", "of", "iterate", "generate", "range", "rangeClosed", "concat"),
+      staticCall(JAVA_UTIL_STREAM_DOUBLE_STREAM, "empty", "of", "iterate", "generate", "concat"),
+      staticCall("java.util.stream.StreamSupport", "stream", "intStream", "longStream", "doubleStream"),
+      instanceCall(JAVA_UTIL_COLLECTION, "stream", "parallelStream"),
+      instanceCall(JAVA_UTIL_ARRAYS, "stream"),
+      instanceCall(JAVA_UTIL_STREAM_STREAM, "filter", "map", "mapToInt", "mapToLong", "mapToDouble", "flatMap", "flatMapToInt",
+                   "flatMapToLong", "flatMapToDouble", "mapMulti", "mapMultiToInt", "mapMultiToLong", "mapMultiToDouble", "distinct", "sorted",
+                   "peek", "limit", "skip", "takeWhile", "dropWhile"),
+      instanceCall(JAVA_UTIL_STREAM_INT_STREAM, "filter", "map", "mapToObj", "mapToLong", "mapToDouble", "flatMap", "mapMulti",
+                   "distinct", "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile"),
+      instanceCall(JAVA_UTIL_STREAM_LONG_STREAM, "filter", "map", "mapToObj", "mapToInt", "mapToDouble", "flatMap", "mapMulti",
+                   "distinct", "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile"),
+      instanceCall(JAVA_UTIL_STREAM_DOUBLE_STREAM, "filter", "map", "mapToObj", "mapToInt", "mapToLong", "flatMap", "mapMulti",
+                   "distinct", "sorted", "peek", "limit", "skip", "takeWhile", "dropWhile")),
+              toValue((arguments, state, factory, method) -> CONSUMED_STREAM.asDfType(FALSE)
+                .meet(LOCAL_OBJECT)
+                .meet(NOT_NULL_OBJECT)));
 
   public static CustomMethodHandler find(PsiMethod method) {
     CustomMethodHandler handler = null;

@@ -12,6 +12,7 @@ import com.intellij.codeInspection.dataFlow.java.anchor.JavaMethodReferenceRetur
 import com.intellij.codeInspection.dataFlow.jvm.JvmPsiRangeSetUtil;
 import com.intellij.codeInspection.dataFlow.jvm.SpecialField;
 import com.intellij.codeInspection.dataFlow.jvm.problems.MutabilityProblem;
+import com.intellij.codeInspection.dataFlow.jvm.problems.StreamConsumedProblem;
 import com.intellij.codeInspection.dataFlow.lang.ir.DfaInstructionState;
 import com.intellij.codeInspection.dataFlow.lang.ir.ExpressionPushingInstruction;
 import com.intellij.codeInspection.dataFlow.lang.ir.Instruction;
@@ -32,8 +33,12 @@ import com.siyeh.ig.psiutils.MethodUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
+import static com.intellij.codeInspection.dataFlow.jvm.SpecialField.CONSUMED_STREAM;
 import static com.intellij.codeInspection.dataFlow.types.DfTypes.*;
 import static com.intellij.util.ObjectUtils.tryCast;
 
@@ -83,7 +88,9 @@ public class MethodCallInstruction extends ExpressionPushingInstruction {
     myMutation = MutationSignature.fromMethod(myTargetMethod);
   }
 
-  public MethodCallInstruction(@NotNull PsiCall call, @Nullable DfaValue precalculatedReturnValue, List<? extends MethodContract> contracts) {
+  public MethodCallInstruction(@NotNull PsiCall call,
+                               @Nullable DfaValue precalculatedReturnValue,
+                               List<? extends MethodContract> contracts) {
     super(call instanceof PsiExpression ? new JavaExpressionAnchor((PsiExpression)call) : null);
     myContext = call;
     myContracts = Collections.unmodifiableList(contracts);
@@ -93,19 +100,22 @@ public class MethodCallInstruction extends ExpressionPushingInstruction {
 
     JavaResolveResult result = call.resolveMethodGenerics();
     myTargetMethod = (PsiMethod)result.getElement();
-    myArgCount = myTargetMethod != null && MethodCallUtils.isVarArgCall(call) ? myTargetMethod.getParameterList().getParametersCount() : args.length;
+    myArgCount =
+      myTargetMethod != null && MethodCallUtils.isVarArgCall(call) ? myTargetMethod.getParameterList().getParametersCount() : args.length;
 
     PsiSubstitutor substitutor = result.getSubstitutor();
     if (argList != null && myTargetMethod != null) {
       PsiParameter[] parameters = myTargetMethod.getParameterList().getParameters();
       myArgRequiredNullability = calcArgRequiredNullability(substitutor, parameters);
-    } else {
+    }
+    else {
       myArgRequiredNullability = EMPTY_NULLABILITY_ARRAY;
     }
 
     myMutation = MutationSignature.fromCall(call);
     myPrecalculatedReturnValue = DfaTypeValue.isUnknown(precalculatedReturnValue) ? null : precalculatedReturnValue;
-    myReturnNullability = call instanceof PsiNewExpression ? Nullability.NOT_NULL : DfaPsiUtil.getElementNullability(myType, myTargetMethod);
+    myReturnNullability =
+      call instanceof PsiNewExpression ? Nullability.NOT_NULL : DfaPsiUtil.getElementNullability(myType, myTargetMethod);
   }
 
   private MethodCallInstruction(@NotNull MethodCallInstruction from, @NotNull DfaValue precalculatedReturnValue) {
@@ -360,8 +370,8 @@ public class MethodCallInstruction extends ExpressionPushingInstruction {
   }
 
   private @NotNull DfaValue getMethodResultValue(@NotNull DfaCallArguments callArguments,
-                                                 @NotNull DfaMemoryState state, 
-                                                 @NotNull DfaValueFactory factory, 
+                                                 @NotNull DfaMemoryState state,
+                                                 @NotNull DfaValueFactory factory,
                                                  PsiMethod realMethod) {
     if (callArguments.getArguments() != null) {
       PsiMethod method = myTargetMethod;
@@ -394,7 +404,8 @@ public class MethodCallInstruction extends ExpressionPushingInstruction {
         if (realMethod != myTargetMethod) {
           nullability = DfaPsiUtil.getElementNullability(type, realMethod);
           mutable = Mutability.getMutability(realMethod);
-        } else {
+        }
+        else {
           mutable = Mutability.getMutability(myTargetMethod);
         }
         PsiType qualifierType = DfaPsiUtil.dfTypeToPsiType(factory.getProject(), state.getDfType(qualifierValue));
@@ -442,12 +453,13 @@ public class MethodCallInstruction extends ExpressionPushingInstruction {
     if (getContext() instanceof PsiMethodReferenceExpression) {
       PsiMethodReferenceExpression context = (PsiMethodReferenceExpression)getContext();
       if (MethodReferenceInstruction.isQualifierDereferenced(context)) {
-        value = CheckNotNullInstruction.dereference(interpreter, memState, value, NullabilityProblemKind.callMethodRefNPE.problem(context, null));
+        value =
+          CheckNotNullInstruction.dereference(interpreter, memState, value, NullabilityProblemKind.callMethodRefNPE.problem(context, null));
       }
     }
     DfType dfType = memState.getDfType(value);
+    PsiMethod method = getTargetMethod();
     if (getMutationSignature().mutatesThis() && !Mutability.fromDfType(dfType).canBeModified()) {
-      PsiMethod method = getTargetMethod();
       // Inferred mutation annotation may infer mutates="this" if invisible state is mutated (e.g. cached hashCode is stored).
       // So let's conservatively skip the warning here. Such contract is still useful because it assures that nothing else is mutated.
       if (method != null && JavaMethodContractUtil.hasExplicitContractAnnotation(method)) {
@@ -457,11 +469,33 @@ public class MethodCallInstruction extends ExpressionPushingInstruction {
         }
       }
     }
+
+    if (ConsumedStreamUtils.isCheckedCallForConsumedStream(method)) {
+      DfaValue streamConsumedValue = CONSUMED_STREAM.createValue(value.getFactory(), value);
+      final DfType streamConsumedType = memState.getDfType(streamConsumedValue);
+      if (streamConsumedType.equals(TRUE)) {
+        PsiElement anchor = getContext();
+        if (anchor instanceof PsiMethodCallExpression) {
+          anchor = ((PsiMethodCallExpression)anchor).getMethodExpression().getQualifierExpression();
+        }
+        else if (anchor instanceof PsiMethodReferenceExpression) {
+          anchor = ((PsiMethodReferenceExpression)anchor).getQualifierExpression();
+        }
+        if (anchor != null) {
+          interpreter.getListener().onCondition(new StreamConsumedProblem(anchor), value, ThreeState.YES, memState);
+        }
+      }
+    }
+
     TypeConstraint constraint = TypeConstraint.fromDfType(dfType);
-    if (!constraint.isArray() && (constraint.isComparedByEquals() || mayLeakThis(memState, argValues))) {
+    if (!knownQualifierLeak() && !constraint.isArray() && (constraint.isComparedByEquals() || mayLeakThis(memState, argValues))) {
       value = JavaDfaHelpers.dropLocality(value, memState);
     }
     return value;
+  }
+
+  private boolean knownQualifierLeak() {
+    return HardcodedContracts.isKnownNoQualifierLeak(getTargetMethod());
   }
 
   private DfaValue @Nullable [] popCallArguments(DataFlowInterpreter interpreter, DfaMemoryState memState) {
@@ -480,7 +514,7 @@ public class MethodCallInstruction extends ExpressionPushingInstruction {
       int paramIndex = myArgCount - i - 1;
 
       boolean parameterMayNotLeak =
-        HardcodedContracts.isKnownNoParameterLeak(myTargetMethod) ||
+        HardcodedContracts.isKnownNoParameterLeak(myTargetMethod, arg, memState) ||
         (myMutation.isPure() ||
          myMutation.equals(MutationSignature.pure().alsoMutatesArg(paramIndex))) &&
         !JavaDfaHelpers.mayLeakFromType(typedObject(getResultType(), Nullability.UNKNOWN));

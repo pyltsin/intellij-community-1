@@ -3,12 +3,16 @@ package com.intellij.codeInspection.dataFlow;
 
 import com.intellij.codeInspection.dataFlow.StandardMethodContract.ValueConstraint;
 import com.intellij.codeInspection.dataFlow.jvm.SpecialField;
+import com.intellij.codeInspection.dataFlow.memory.DfaMemoryState;
+import com.intellij.codeInspection.dataFlow.types.DfType;
+import com.intellij.codeInspection.dataFlow.value.DfaValue;
 import com.intellij.codeInspection.dataFlow.value.RelationType;
 import com.intellij.codeInspection.util.OptionalUtil;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.psi.*;
 import com.intellij.psi.util.InheritanceUtil;
 import com.intellij.psi.util.PsiUtil;
+import com.intellij.util.ThreeState;
 import com.intellij.util.containers.ContainerUtil;
 import com.siyeh.ig.callMatcher.CallMapper;
 import com.siyeh.ig.callMatcher.CallMatcher;
@@ -25,6 +29,8 @@ import static com.intellij.codeInspection.dataFlow.MethodContract.singleConditio
 import static com.intellij.codeInspection.dataFlow.MethodContract.trivialContract;
 import static com.intellij.codeInspection.dataFlow.StandardMethodContract.ValueConstraint.*;
 import static com.intellij.codeInspection.dataFlow.StandardMethodContract.createConstraintArray;
+import static com.intellij.codeInspection.dataFlow.jvm.SpecialField.CONSUMED_STREAM;
+import static com.intellij.codeInspection.dataFlow.types.DfTypes.TRUE;
 import static com.intellij.psi.CommonClassNames.*;
 import static com.siyeh.ig.callMatcher.CallMatcher.*;
 
@@ -52,10 +58,12 @@ public final class HardcodedContracts {
       instanceCall(JAVA_UTIL_MAP, "putAll").parameterTypes(JAVA_UTIL_MAP));
 
   /**
-   * @param method method to test
+   * @param method   method to test
+   * @param arg
+   * @param memState
    * @return true if given method doesn't spoil the arguments' locality
    */
-  public static boolean isKnownNoParameterLeak(@Nullable PsiMethod method) {
+  public static boolean isKnownNoParameterLeak(@Nullable PsiMethod method, DfaValue arg, DfaMemoryState memState) {
     if (method == null) return false;
     if (ConstructionUtils.isCollectionConstructor(method)) {
       PsiClass aClass = method.getContainingClass();
@@ -66,7 +74,26 @@ public final class HardcodedContracts {
                 InheritanceUtil.isInheritor(aClass, JAVA_UTIL_MAP));
       }
     }
-    return NO_PARAMETER_LEAK_METHODS.methodMatches(method);
+    boolean noLeak = NO_PARAMETER_LEAK_METHODS.methodMatches(method);
+    if (noLeak) {
+      return true;
+    }
+    DfaValue streamConsumedValue = CONSUMED_STREAM.createValue(arg.getFactory(), arg);
+    final DfType streamConsumedType = memState.getDfType(streamConsumedValue);
+    if (streamConsumedType.equals(TRUE)) {
+      return true;
+    }
+    return false;
+  }
+
+  private static final CallMatcher NO_QUALIFIER_LEAK_MATCHERS = anyOf(
+    //not fully clear, but they don't affect on CONSUMED_STREAM and other tracked parameters
+    ConsumedStreamUtils.getAllNonLeakStreamMatchers()
+  );
+
+  public static boolean isKnownNoQualifierLeak(@Nullable  PsiMethod method) {
+    if (method == null) return false;
+    return NO_QUALIFIER_LEAK_MATCHERS.methodMatches(method);
   }
 
   @FunctionalInterface
