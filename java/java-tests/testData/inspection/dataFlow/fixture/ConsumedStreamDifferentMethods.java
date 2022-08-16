@@ -59,7 +59,8 @@ public class ConsumedStreamDifferentMethods {
   }
 
   public static void test9() {
-    List<String> strings = List.<error descr="Cannot resolve method 'of' in 'List'">of</error>("1", "2", "3");
+    ArrayList<String> strings = new ArrayList<>();
+    strings.add("x");
     Stream<String> stream = strings.stream();
     long count = stream.count();
     double random = Math.random();
