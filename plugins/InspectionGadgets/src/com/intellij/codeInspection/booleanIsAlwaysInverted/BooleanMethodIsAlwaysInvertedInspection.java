@@ -114,7 +114,7 @@ public class BooleanMethodIsAlwaysInvertedInspection extends GlobalJavaBatchInsp
               if (psiReferenceExpression == null) return false;
               PsiMethodCallExpression methodCallExpression =
                 ObjectUtils.tryCast(psiReferenceExpression.getParent(), PsiMethodCallExpression.class);
-              if (methodCallExpression != null && !isInvertedMethodCall(methodCallExpression)) {
+              if (methodCallExpression != null  && !isSuperCall(methodCallExpression) && !isInvertedMethodCall(methodCallExpression)) {
                 descriptionsProcessor.ignoreElement(refMethod);
               }
               return false;
@@ -169,7 +169,7 @@ public class BooleanMethodIsAlwaysInvertedInspection extends GlobalJavaBatchInsp
         super.visitMethodCallExpression(call);
         final PsiReferenceExpression methodExpression = call.getMethodExpression();
         if (methodExpression.isReferenceTo(psiMethod)) {
-          if (isInvertedMethodCall(call)) return;
+          if (isSuperCall(call) || isInvertedMethodCall(call)) return;
           refMethod.putUserData(ALWAYS_INVERTED, Boolean.FALSE);
         }
       }
@@ -184,9 +184,12 @@ public class BooleanMethodIsAlwaysInvertedInspection extends GlobalJavaBatchInsp
     });
   }
 
-  static boolean isInvertedMethodCall(@NotNull PsiMethodCallExpression methodCallExpression) {
+  static boolean isSuperCall(@NotNull PsiMethodCallExpression methodCallExpression) {
     PsiReferenceExpression methodExpression = methodCallExpression.getMethodExpression();
-    if (methodExpression.getQualifierExpression() instanceof PsiSuperExpression) return true; //don't flag super calls
+    return methodExpression.getQualifierExpression() instanceof PsiSuperExpression; //don't flag super calls
+  }
+
+  static boolean isInvertedMethodCall(@NotNull PsiMethodCallExpression methodCallExpression) {
     final PsiPrefixExpression prefixExpression = ObjectUtils.tryCast(methodCallExpression.getParent(), PsiPrefixExpression.class);
     return prefixExpression != null && prefixExpression.getOperationTokenType().equals(JavaTokenType.EXCL);
   }

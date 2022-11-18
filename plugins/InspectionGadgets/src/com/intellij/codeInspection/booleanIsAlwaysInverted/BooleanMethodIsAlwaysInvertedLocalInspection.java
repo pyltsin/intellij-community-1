@@ -38,25 +38,34 @@ public class BooleanMethodIsAlwaysInvertedLocalInspection extends AbstractBaseJa
     PsiType returnType = method.getReturnType();
     if (!PsiType.BOOLEAN.equals(returnType) ||
         MethodUtils.hasSuper(method) ||
-        RefUtil.isImplicitRead(method)) return null;
+        RefUtil.isImplicitRead(method)) {
+      return null;
+    }
 
     int[] usageCount = {0};
+    int[] usageAsNegativeCount = {0};
     if (!UnusedSymbolUtil.processUsages(manager.getProject(), method.getContainingFile(), method, new EmptyProgressIndicator(), null, u -> {
       PsiElement element = u.getElement();
       if (!(element instanceof PsiReferenceExpression)) return false;
       PsiMethodCallExpression methodCallExpression = ObjectUtils.tryCast(element.getParent(), PsiMethodCallExpression.class);
       if (methodCallExpression == null) return false;
+      boolean isSuperCall = BooleanMethodIsAlwaysInvertedInspection.isSuperCall(methodCallExpression);
       boolean isInverted = BooleanMethodIsAlwaysInvertedInspection.isInvertedMethodCall(methodCallExpression);
-      if (isInverted) {
+      if (isInverted || isSuperCall) {
         usageCount[0]++;
+        if (isInverted) {
+          usageAsNegativeCount[0]++;
+        }
         return true;
-      } else {
+      }
+      else {
         return false;
       }
     })) {
       return null;
     }
     if (usageCount[0] < 2) return null;
-    return new ProblemDescriptor[] { myGlobalTool.createProblemDescriptor(manager, method.getNameIdentifier(), isOnTheFly) };
+    if (usageAsNegativeCount[0] < 1) return null;
+    return new ProblemDescriptor[]{myGlobalTool.createProblemDescriptor(manager, method.getNameIdentifier(), isOnTheFly)};
   }
 }

@@ -63,6 +63,9 @@ public class BooleanMethodIsAlwaysInvertedInspectionTest extends IGInspectionTes
     IdeaTestUtil.withLevel(getModule(), LanguageLevel.JDK_1_8, () -> doTest());
   }
 
+  public void testIgnoreOnlySuperCalls() {
+    doTest();
+  }
   private void doTest() {
     doTest(false);
   }
