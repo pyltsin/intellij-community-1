@@ -15,6 +15,7 @@ import com.siyeh.InspectionGadgetsBundle;
 import com.siyeh.ig.BaseInspection;
 import com.siyeh.ig.BaseInspectionVisitor;
 import com.siyeh.ig.InspectionGadgetsFix;
+import com.siyeh.ig.migration.TryWithIdenticalCatchesInspection;
 import com.siyeh.ig.psiutils.ClassUtils;
 import com.siyeh.ig.psiutils.MethodCallUtils;
 import com.siyeh.ig.psiutils.TrackingEquivalenceChecker;
@@ -22,6 +23,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class RedundantMethodOverrideInspection extends BaseInspection {
 
@@ -102,6 +107,7 @@ public class RedundantMethodOverrideInspection extends BaseInspection {
           !AbstractMethodOverridesAbstractMethodInspection.methodsHaveSameAnnotationsAndModifiers(method, superMethod) ||
           !AbstractMethodOverridesAbstractMethodInspection.methodsHaveSameReturnTypes(method, superMethod) ||
           !AbstractMethodOverridesAbstractMethodInspection.haveSameExceptionSignatures(method, superMethod) ||
+          (method.getDocComment() != null && !AbstractMethodOverridesAbstractMethodInspection.haveSameJavaDoc(method, superMethod)) ||
           method.isVarArgs() != superMethod.isVarArgs()) {
         return;
       }
@@ -158,9 +164,29 @@ public class RedundantMethodOverrideInspection extends BaseInspection {
         checker.markDeclarationsAsEquivalent(parameters[i], superParameters[i]);
       }
       checker.markDeclarationsAsEquivalent(method, superMethod);
-      if (checker.codeBlocksAreEquivalent(body, superBody)) {
+      if (checker.codeBlocksAreEquivalent(body, superBody) && haveTheSameComments(method, superMethod)) {
         registerMethodError(method, Boolean.FALSE);
       }
+    }
+
+    private static boolean haveTheSameComments(PsiMethod method1, PsiMethod method2) {
+      Set<String> text1 = collectCommentText(method1);
+      Set<String> text2 = collectCommentText(method2);
+      return text2.containsAll(text1);
+    }
+
+    private static Set<String> collectCommentText(PsiMethod method) {
+      Set<String> result = new HashSet<>();
+      PsiTreeUtil.processElements(method, child -> {
+        if (child instanceof PsiComment) {
+          String text = TryWithIdenticalCatchesInspection.getCommentText((PsiComment)child);
+          if (!text.isEmpty()) {
+            result.add(text);
+          }
+        }
+        return true;
+      });
+      return result;
     }
 
     private boolean isSuperCallWithSameArguments(PsiCodeBlock body, PsiMethod method, PsiMethod superMethod) {
@@ -197,6 +223,11 @@ public class RedundantMethodOverrideInspection extends BaseInspection {
       }
       final PsiMethod targetMethod = methodCallExpression.resolveMethod();
       if (targetMethod != superMethod) {
+        return false;
+      }
+
+      PsiComment comment = PsiTreeUtil.findChildOfType(body, PsiComment.class);
+      if (comment != null) {
         return false;
       }
 

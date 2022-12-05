@@ -108,12 +108,28 @@ class CC extends A {
   }
 }
 class SuperCall {
+  /**
+   * some old comment
+   */
   void some() {
   }
 }
 class S2 extends SuperCall {
+  /**
+   * some old comment
+   */
   @Override
   void <warning descr="Method 'some()' only delegates to its super method">some</warning>() {
+    super.some();
+  }
+}
+
+class S3 extends SuperCall {
+  /**
+   * some new comment
+   */
+  @Override
+  void some() {
     super.some();
   }
 }
@@ -276,6 +292,23 @@ class ABCD extends P {
         k++;
         x(k, l);
       }
+    };
+    int z1 = 1;
+    z1++;
+  }
+
+}
+
+class ABCD2 extends P {
+  void f(boolean b, int i) {
+    String s = "" + (s = "");
+    new Object() {
+      {}
+
+      void x(int k, /**/ final  int l) {
+        k++;
+        x(k, l);
+      }
       // glucose & glutamine
     };
     int z1 = 1;
@@ -316,7 +349,7 @@ class X5 {
       void a() {
         System.out.println(1);
       }
-      void b() {
+      void b() {  // whitespace difference
         System.out.println(2);
       }
     };
