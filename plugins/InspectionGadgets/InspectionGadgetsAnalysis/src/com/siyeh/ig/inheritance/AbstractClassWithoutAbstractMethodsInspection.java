@@ -15,20 +15,35 @@
  */
 package com.siyeh.ig.inheritance;
 
+import com.intellij.codeInspection.ui.SingleCheckboxOptionsPanel;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.siyeh.InspectionGadgetsBundle;
 import com.siyeh.ig.BaseInspection;
 import com.siyeh.ig.BaseInspectionVisitor;
+import com.siyeh.ig.psiutils.UtilityClassUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 public class AbstractClassWithoutAbstractMethodsInspection
   extends BaseInspection {
+
+  @SuppressWarnings("PublicField")
+  public boolean ignoreUtilityClasses = true;
+
+  @Nullable
+  @Override
+  public JComponent createOptionsPanel() {
+    return new SingleCheckboxOptionsPanel(
+      InspectionGadgetsBundle.message("abstract.class.without.abstract.methods.ignore.utility.class.option"),
+      this, "ignoreUtilityClasses");
+  }
 
   @Override
   @NotNull
@@ -42,7 +57,7 @@ public class AbstractClassWithoutAbstractMethodsInspection
     return new AbstractClassWithoutAbstractMethodsVisitor();
   }
 
-  private static class AbstractClassWithoutAbstractMethodsVisitor
+  private class AbstractClassWithoutAbstractMethodsVisitor
     extends BaseInspectionVisitor {
 
     @Override
@@ -55,6 +70,9 @@ public class AbstractClassWithoutAbstractMethodsInspection
         return;
       }
       if (hasAbstractMethods(aClass)) {
+        return;
+      }
+      if (ignoreUtilityClasses && UtilityClassUtil.isUtilityClass(aClass) && UtilityClassUtil.countStaticMethods(aClass.getMethods()) > 0) {
         return;
       }
       registerClassError(aClass);

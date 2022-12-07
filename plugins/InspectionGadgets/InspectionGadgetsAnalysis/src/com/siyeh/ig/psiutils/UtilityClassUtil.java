@@ -93,7 +93,7 @@ public final class UtilityClassUtil {
   /**
    * @return -1 if an instance method was found, else the number of non-private static methods in the specified array.
    */
-  private static int countStaticMethods(PsiMethod[] methods) {
+  public static int countStaticMethods(PsiMethod[] methods) {
     int staticCount = 0;
     for (final PsiMethod method : methods) {
       if (method.isConstructor()) {
